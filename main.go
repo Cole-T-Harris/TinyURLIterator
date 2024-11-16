@@ -2,25 +2,48 @@ package main
 
 import (
 	"fmt"
-	"io"
+	"github.com/pkg/browser"
+	"math/rand"
 	"net/http"
+	"time"
 )
 
-func main() {
-	baseURL := "https://tinyurl.com/"
-	fmt.Println("Hello", baseURL)
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+var baseURL = "https://tinyurl.com/"
 
-	resp, err := http.Get(baseURL)
-	if err != nil {
-		fmt.Println("Invalid URL: ", err)
-		return
+func randSeq(n int) string {
+    b := make([]rune, n)
+    for i := range b {
+        b[i] = letters[rand.Intn(len(letters))]
+    }
+    return string(b)
+}
+
+func main() {
+
+	for {
+		randomTinyURL := baseURL + randSeq(6)
+		fmt.Println("Random URL: ", randomTinyURL)
+		resp, err := http.Get(randomTinyURL)
+		if err != nil {
+			fmt.Println("Issue getting response: ", err)
+		}
+		defer resp.Body.Close()
+
+		statusCode := resp.StatusCode
+		fmt.Println("Status Code: ", statusCode)
+
+		if err == nil && statusCode == 200 {
+			fmt.Println("Valid URL: ", randomTinyURL)
+			err = browser.OpenURL(randomTinyURL)
+			if err != nil {
+				fmt.Println("Issue opening browser: ", err)
+			}
+			return // Exit the loop and program when URL is valid
+		} else {
+			fmt.Println("Invalid URL: ", randomTinyURL)
+		}
+
+		time.Sleep(2 * time.Second) // Add a delay to prevent spamming the server
 	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error Reading Body: ", err)
-		return
-	}
-	fmt.Println(string(body[:]))
-	fmt.Println("Status Code: ", resp.StatusCode)
 }
