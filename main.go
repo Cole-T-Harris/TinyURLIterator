@@ -27,23 +27,25 @@ func main() {
 		resp, err := http.Get(randomTinyURL)
 		if err != nil {
 			fmt.Println("Issue getting response: ", err)
+			time.Sleep(2 * time.Second) // Wait and retry
+			continue  
 		}
-		defer resp.Body.Close()
 
 		statusCode := resp.StatusCode
 		fmt.Println("Status Code: ", statusCode)
-
+		waitTimer := time.Duration(15)
 		if err == nil && statusCode == 200 {
 			fmt.Println("Valid URL: ", randomTinyURL)
 			err = browser.OpenURL(randomTinyURL)
 			if err != nil {
 				fmt.Println("Issue opening browser: ", err)
+				waitTimer = 2
 			}
-			return // Exit the loop and program when URL is valid
 		} else {
 			fmt.Println("Invalid URL: ", randomTinyURL)
+			waitTimer = 2
 		}
 
-		time.Sleep(2 * time.Second) // Add a delay to prevent spamming the server
+		time.Sleep(waitTimer * time.Second) // Add a delay to prevent spamming the server
 	}
 }
